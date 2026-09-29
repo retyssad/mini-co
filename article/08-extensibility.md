@@ -6,7 +6,7 @@
 
 MCP（Model Context Protocol）是让 agent 调用外部工具服务的标准。完整协议有生命周期管理、能力协商、资源订阅、提示词模板、采样回调一大堆东西。`mcp.py` 只留了一个 agent 真正用的切面：起进程、握手、问它有哪些工具、调用工具、最后关掉它。
 
-服务端配置在 `~/.corecoder/mcp.json`：
+服务端配置在 `~/.mini-co/mcp.json`：
 
 ```json
 {"mcpServers": {"fs": {"command": "npx", "args": ["-y", "some-fs-server", "/tmp"]}}}
@@ -33,7 +33,7 @@ threading.Thread(target=self._read_loop, daemon=True).start()
 
 ## 钩子：能否决，但永远杀不死循环
 
-MCP 给 agent 加能力，钩子（hooks）改的是已有工具的行为。定义放在 `~/.corecoder/hooks.json`：
+MCP 给 agent 加能力，钩子（hooks）改的是已有工具的行为。定义放在 `~/.mini-co/hooks.json`：
 
 ```json
 {"PreToolUse":  [{"matcher": "bash", "command": "python check.py"}],

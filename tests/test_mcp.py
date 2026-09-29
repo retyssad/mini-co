@@ -10,13 +10,13 @@ import sys
 
 import pytest
 
-from corecoder import mcp
-from corecoder.agent import Agent
-from corecoder.demo import ScriptedLLM
-from corecoder.hooks import Hooks
-from corecoder.llm import LLMResponse, ToolCall
-from corecoder.mcp import MCPError, load_mcp_tools
-from corecoder.permissions import Permission
+from mini_co import mcp
+from mini_co.agent import Agent
+from mini_co.demo import ScriptedLLM
+from mini_co.hooks import Hooks
+from mini_co.llm import LLMResponse, ToolCall
+from mini_co.mcp import MCPError, load_mcp_tools
+from mini_co.permissions import Permission
 
 FAKE_SERVER = """
 import json, os, sys, time

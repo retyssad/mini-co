@@ -2,13 +2,13 @@
 
 import logging
 
-from corecoder import Agent
-from corecoder.demo import ScriptedLLM
-from corecoder.hooks import Hooks, load_hooks
-from corecoder.llm import LLMResponse, ToolCall
-from corecoder.permissions import Permission
-from corecoder.tools.agent import AgentTool
-from corecoder.tools.write import WriteFileTool
+from mini_co import Agent
+from mini_co.demo import ScriptedLLM
+from mini_co.hooks import Hooks, load_hooks
+from mini_co.llm import LLMResponse, ToolCall
+from mini_co.permissions import Permission
+from mini_co.tools.agent import AgentTool
+from mini_co.tools.write import WriteFileTool
 
 
 def _write_call(call_id, path):
@@ -98,7 +98,7 @@ def test_failing_hook_is_skipped_with_a_warning(tmp_path, caplog):
 
 
 def test_slow_hook_times_out_and_is_skipped(tmp_path, caplog, monkeypatch):
-    monkeypatch.setattr("corecoder.hooks.TIMEOUT", 0.3)
+    monkeypatch.setattr("mini_co.hooks.TIMEOUT", 0.3)
     agent = _agent(tmp_path, Hooks(pre=[{"matcher": "*", "command": "sleep 5"}], post=[]))
     with caplog.at_level(logging.WARNING):
         assert agent.chat("go") == "done"

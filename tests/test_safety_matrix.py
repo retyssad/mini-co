@@ -2,7 +2,7 @@
 
 Each mechanism has its own test file. This file pins the interactions, the
 places where two policies meet and the order between them decides what the
-model is told. These combinations are the part of CoreCoder that must never
+model is told. These combinations are the part of mini-co that must never
 be wrong, because it is where readers copy the pattern from.
 """
 
@@ -11,14 +11,14 @@ from typing import ClassVar
 
 import pytest
 
-from corecoder import Agent
-from corecoder.demo import ScriptedLLM
-from corecoder.hooks import Hooks
-from corecoder.llm import LLMResponse, ToolCall
-from corecoder.permissions import Permission
-from corecoder.tools.base import Tool
-from corecoder.tools.grep import GrepTool
-from corecoder.tools.write import WriteFileTool
+from mini_co import Agent
+from mini_co.demo import ScriptedLLM
+from mini_co.hooks import Hooks
+from mini_co.llm import LLMResponse, ToolCall
+from mini_co.permissions import Permission
+from mini_co.tools.base import Tool
+from mini_co.tools.grep import GrepTool
+from mini_co.tools.write import WriteFileTool
 
 
 def _write_call(call_id, path):

@@ -6,7 +6,7 @@ By the end of article seven you had a working agent. Almost immediately you will
 
 The Model Context Protocol is the standard for calling external tool services from an agent. The full spec has lifecycle management, capability negotiation, resource subscriptions, prompt templates, and sampling callbacks. `mcp.py` keeps only the slice an agent actually exercises: spawn a process, handshake, ask what tools it has, call them, and shut it down at the end.
 
-Servers live in `~/.corecoder/mcp.json`:
+Servers live in `~/.mini-co/mcp.json`:
 
 ```json
 {"mcpServers": {"fs": {"command": "npx", "args": ["-y", "some-fs-server", "/tmp"]}}}
@@ -33,7 +33,7 @@ The failure surfaces as an ordinary error string from that one tool call. The mo
 
 ## Hooks: allowed to veto, never allowed to kill
 
-MCP adds capabilities; hooks change the behavior of tools that already exist. They are defined in `~/.corecoder/hooks.json`:
+MCP adds capabilities; hooks change the behavior of tools that already exist. They are defined in `~/.mini-co/hooks.json`:
 
 ```json
 {"PreToolUse":  [{"matcher": "bash", "command": "python check.py"}],

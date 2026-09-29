@@ -6,6 +6,7 @@ it did not exist). In-memory only: undo history dies with the process, and
 bash side effects are not tracked, only the two file-writing tools.
 """
 
+import difflib
 from pathlib import Path
 
 # (path, prior bytes or None if the file did not exist)
@@ -38,6 +39,27 @@ def undo() -> str:
 
 def pending() -> int:
     return len(_stack)
+
+
+def changed_paths() -> list[str]:
+    originals = {path: prior for path, prior in reversed(_stack)}
+    return sorted(
+        path for path, prior in originals.items()
+        if (Path(path).read_bytes() if Path(path).exists() else None) != prior
+    )
+
+
+def diff_for(path: str) -> str:
+    prior = next((data for name, data in _stack if name == path), None)
+    if not any(name == path for name, _ in _stack):
+        return "No checkpoint for this file."
+    current = Path(path).read_bytes() if Path(path).exists() else b""
+    try:
+        before = (prior or b"").decode("utf-8").splitlines(keepends=True)
+        after = current.decode("utf-8").splitlines(keepends=True)
+    except UnicodeDecodeError:
+        return "Binary file changed."
+    return "".join(difflib.unified_diff(before, after, fromfile="a/" + path, tofile="b/" + path)) or "No changes."
 
 
 def clear() -> None:

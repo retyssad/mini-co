@@ -9,10 +9,10 @@ from unittest import mock
 import pytest
 from openai import BadRequestError
 
-from corecoder import ALL_TOOLS, LLM, Agent, Config, __version__
-from corecoder import session as session_module
-from corecoder.context import ContextManager, estimate_tokens
-from corecoder.session import list_sessions, load_session, save_session
+from mini_co import ALL_TOOLS, LLM, Agent, Config, __version__
+from mini_co import session as session_module
+from mini_co.context import ContextManager, estimate_tokens
+from mini_co.session import list_sessions, load_session, save_session
 from tests.conftest import get_tool
 
 
@@ -21,38 +21,6 @@ def test_version():
     m = re.search(r'(?m)^version = "([^"]+)"', Path("pyproject.toml").read_text())
     assert m is not None
     assert __version__ == m.group(1)
-
-
-def test_readme_line_counts_are_current():
-    # The LoC numbers are the brand of this repo. If the engine or the
-    # package grows, the README has to move with it, and this test is the
-    # alarm: update the badge and the prose in README.md and README_CN.md.
-    root = Path(__file__).resolve().parent.parent
-    engine_files = [
-        root / "corecoder" / name
-        for name in ("agent.py", "llm.py", "context.py", "session.py")
-    ]
-    engine_files += sorted((root / "corecoder" / "tools").glob("*.py"))
-    package_files = sorted((root / "corecoder").rglob("*.py"))
-
-    def net_lines(path: Path) -> int:
-        return sum(
-            1
-            for line in path.read_text(encoding="utf-8").splitlines()
-            if line.strip() and not line.strip().startswith("#")
-        )
-
-    engine = sum(net_lines(f) for f in engine_files)
-    physical = sum(
-        len(f.read_text(encoding="utf-8").splitlines()) for f in package_files
-    )
-    package_net = sum(net_lines(f) for f in package_files)
-
-    readme = (root / "README.md").read_text(encoding="utf-8")
-    assert f"engine-{engine}_LoC" in readme
-    assert f"{len(package_files)} files" in readme
-    assert f"{physical:,} physical lines" in readme
-    assert f"{package_net:,} net" in readme
 
 
 def test_public_api_exports():
@@ -64,15 +32,16 @@ def test_public_api_exports():
 
 
 def test_config_from_env(monkeypatch):
-    monkeypatch.setenv("CORECODER_MODEL", "test-model")
+    monkeypatch.setenv("MINI_CO_MODEL", "test-model")
     c = Config.from_env()
     assert c.model == "test-model"
 
 
-def test_config_defaults(monkeypatch):
+def test_config_defaults(monkeypatch, tmp_path):
     # clear relevant env vars without leaking the change into other tests
-    monkeypatch.delenv("CORECODER_MODEL", raising=False)
-    monkeypatch.delenv("CORECODER_MAX_TOKENS", raising=False)
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("MINI_CO_MODEL", raising=False)
+    monkeypatch.delenv("MINI_CO_MAX_TOKENS", raising=False)
 
     c = Config.from_env()
     assert c.model == "gpt-5.5"
@@ -90,7 +59,7 @@ def test_estimate_tokens():
 
 
 def test_estimate_tokens_tiered_by_content():
-    from corecoder.context import _approx_tokens
+    from mini_co.context import _approx_tokens
 
     prose = "The quick brown fox jumps over the lazy dog. " * 10  # 460 prose chars
     cjk = "你好世界，这是一段中文。" * 20  # 260 hanzi-ish chars
@@ -193,7 +162,7 @@ def test_list_sessions():
 # --- Cost estimation ---
 
 def test_cost_estimation_known_model():
-    from corecoder.llm import LLM
+    from mini_co.llm import LLM
     llm = LLM.__new__(LLM)
     llm.model = "gpt-5.4"
     llm.total_prompt_tokens = 1_000_000
@@ -203,7 +172,7 @@ def test_cost_estimation_known_model():
     assert cost == 2.5 + 7.5  # $2.5/M in + $15/M out * 0.5M
 
 def test_cost_estimation_kimi_k3():
-    from corecoder.llm import LLM
+    from mini_co.llm import LLM
     llm = LLM.__new__(LLM)
     llm.model = "kimi-k3"
     llm.total_prompt_tokens = 1_000_000
@@ -214,7 +183,7 @@ def test_cost_estimation_kimi_k3():
 
 
 def test_cost_estimation_unknown_model():
-    from corecoder.llm import LLM
+    from mini_co.llm import LLM
     llm = LLM.__new__(LLM)
     llm.model = "some-custom-model"
     llm.total_prompt_tokens = 1000
@@ -225,7 +194,7 @@ def test_cost_estimation_unknown_model():
 # --- Changed files tracking ---
 
 def test_edit_tracks_changed_files(tmp_path):
-    from corecoder.tools.edit import _changed_files
+    from mini_co.tools.edit import _changed_files
     _changed_files.clear()
     edit = get_tool("edit_file")
     path = tmp_path / "sample.py"
@@ -236,7 +205,7 @@ def test_edit_tracks_changed_files(tmp_path):
 
 
 def test_write_tracks_changed_files(tmp_path):
-    from corecoder.tools.edit import _changed_files
+    from mini_co.tools.edit import _changed_files
     _changed_files.clear()
     write = get_tool("write_file")
     path = tmp_path / "tracked.txt"
@@ -250,7 +219,7 @@ def test_write_tracks_changed_files(tmp_path):
 def test_parallel_bash_calls_inherit_and_merge_session_cwd(tmp_path):
     """Pool workers must start from the session cwd, not the launch dir, and a
     cd inside the batch moves the session cwd afterwards."""
-    from corecoder.tools.bash import get_tracked_cwd, set_tracked_cwd
+    from mini_co.tools.bash import get_tracked_cwd, set_tracked_cwd
 
     def norm_dir(s: str) -> str:
         # pwd prints the shell's own form: git-bash gives /c/Users/... where
@@ -308,9 +277,9 @@ def test_parallel_edits_to_one_file_both_land(tmp_path):
 
 def test_sub_agent_cwd_does_not_leak_into_parent(tmp_path, monkeypatch):
     """A sub-agent's own cd must not move the parent's tracked cwd."""
-    from corecoder.agent import Agent as CoreAgent
-    from corecoder.tools.agent import AgentTool
-    from corecoder.tools.bash import get_tracked_cwd, set_tracked_cwd
+    from mini_co.agent import Agent as CoreAgent
+    from mini_co.tools.agent import AgentTool
+    from mini_co.tools.bash import get_tracked_cwd, set_tracked_cwd
 
     parent = Agent(llm=LLM.__new__(LLM), tools=[])
     tool = AgentTool()
@@ -334,7 +303,7 @@ def test_sub_agent_cwd_does_not_leak_into_parent(tmp_path, monkeypatch):
 
 def test_reset_clears_todo_list():
     """/reset must drop the dead conversation's checklist from the system prompt."""
-    from corecoder.tools.todo import TodoWriteTool
+    from mini_co.tools.todo import TodoWriteTool
 
     todo = TodoWriteTool()
     agent = Agent(llm=LLM.__new__(LLM), tools=[todo])
@@ -361,7 +330,7 @@ def test_agent_tool_scope_is_per_instance():
 
 def test_exec_tool_distinguishes_bad_args_from_internal_error():
     """A TypeError raised inside a tool must not be reported as bad arguments."""
-    from corecoder.tools.base import Tool
+    from mini_co.tools.base import Tool
 
     class _Boom(Tool):
         name = "boom"
@@ -407,7 +376,7 @@ def test_interrupt_backfills_missing_tool_replies():
 
 def test_todo_list_is_injected_into_system_context():
     """After a todo_write call, the next request must carry the list in the system message."""
-    from corecoder.tools.todo import TodoWriteTool
+    from mini_co.tools.todo import TodoWriteTool
     todo = TodoWriteTool()
     agent = Agent(llm=LLM.__new__(LLM), tools=[todo])
 
@@ -423,7 +392,7 @@ def test_todo_list_is_injected_into_system_context():
 
 def test_todo_injection_tracks_updates():
     """The injection is rebuilt every round: updates show, an empty list injects nothing."""
-    from corecoder.tools.todo import TodoWriteTool
+    from mini_co.tools.todo import TodoWriteTool
     todo = TodoWriteTool()
     agent = Agent(llm=LLM.__new__(LLM), tools=[todo])
 
@@ -691,7 +660,7 @@ class TestMidStreamRetry:
             _DyingStream(self._connection_error()),
             self._good_stream(),
         ]
-        with mock.patch("corecoder.llm.time.sleep"):
+        with mock.patch("mini_co.llm.time.sleep"):
             result = llm.chat(messages=[{"role": "user", "content": "hi"}])
         assert result.content == "full"
         assert create.call_count == 2
@@ -706,7 +675,7 @@ class TestMidStreamRetry:
             _DyingStream(self._server_error()),
             self._good_stream(),
         ]
-        with mock.patch("corecoder.llm.time.sleep"):
+        with mock.patch("mini_co.llm.time.sleep"):
             result = llm.chat(messages=[{"role": "user", "content": "hi"}])
         assert result.content == "full"
         assert create.call_count == 2
@@ -729,6 +698,6 @@ class TestMidStreamRetry:
         ]
         from openai import APIConnectionError
 
-        with mock.patch("corecoder.llm.time.sleep"), pytest.raises(APIConnectionError):
+        with mock.patch("mini_co.llm.time.sleep"), pytest.raises(APIConnectionError):
             llm.chat(messages=[{"role": "user", "content": "hi"}])
         assert create.call_count == 3

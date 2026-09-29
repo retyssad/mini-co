@@ -1,6 +1,6 @@
 """User shell hooks around tool calls, distilled from Claude Code's hooks.
 
-Definitions live in ~/.corecoder/hooks.json:
+Definitions live in ~/.mini-co/hooks.json:
 
     {"PreToolUse":  [{"matcher": "bash", "command": "..."}],
      "PostToolUse": [{"matcher": "*",    "command": "..."}]}
@@ -20,7 +20,7 @@ from .shell import run_shell
 
 log = logging.getLogger(__name__)
 
-HOOKS_FILE = Path.home() / ".corecoder" / "hooks.json"
+HOOKS_FILE = Path.home() / ".mini-co" / "hooks.json"
 TIMEOUT = 10  # seconds; a hung hook must not hang the agent
 
 

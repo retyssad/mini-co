@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from corecoder import checkpoints
-from corecoder.tools.edit import EditFileTool
-from corecoder.tools.write import WriteFileTool
+from mini_co import checkpoints
+from mini_co.tools.edit import EditFileTool
+from mini_co.tools.write import WriteFileTool
 
 
 def setup_function():

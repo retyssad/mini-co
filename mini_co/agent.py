@@ -1,6 +1,6 @@
 """Core agent loop.
 
-This is the heart of CoreCoder.  The pattern is simple:
+This is the heart of mini-co.  The pattern is simple:
 
     user message -> LLM (with tools) -> tool calls? -> execute -> loop
                                       -> text reply? -> return to user
@@ -67,12 +67,17 @@ class Agent:
     def _tool_schemas(self) -> list[dict]:
         return [t.schema() for t in self.tools]
 
-    def chat(self, user_input: str, on_token=None, on_tool=None, on_reasoning=None) -> str:
+    def chat(
+        self, user_input: str, on_token=None, on_tool=None, on_reasoning=None,
+        on_tool_result=None, should_cancel=None,
+    ) -> str:
         """Process one user message. May involve multiple LLM/tool rounds."""
         self.messages.append({"role": "user", "content": user_input})
         self.context.maybe_compress(self.messages, self.llm)
 
         for _ in range(self.max_rounds):
+            if should_cancel and should_cancel():
+                raise KeyboardInterrupt
             resp = self.llm.chat(
                 messages=self._full_messages(),
                 tools=self._tool_schemas(),
@@ -103,6 +108,8 @@ class Agent:
                         "tool_call_id": tc.id,
                         "content": result,
                     })
+                    if on_tool_result:
+                        on_tool_result(tc.name, tc.arguments, result)
                 else:
                     # parallel execution for multiple tool calls
                     results = self._exec_tools_parallel(resp.tool_calls, on_tool)
@@ -112,6 +119,8 @@ class Agent:
                             "tool_call_id": tc.id,
                             "content": result,
                         })
+                        if on_tool_result:
+                            on_tool_result(tc.name, tc.arguments, result)
             except KeyboardInterrupt:
                 # Ctrl+C mid-execution would leave the assistant tool_calls
                 # message without replies, poisoning the next request; backfill

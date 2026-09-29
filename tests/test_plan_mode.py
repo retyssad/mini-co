@@ -1,10 +1,10 @@
 """Plan mode: read-only investigation, then a plan the user approves."""
 
-from corecoder import Agent, Config, cli
-from corecoder.demo import ScriptedLLM
-from corecoder.llm import LLMResponse, ToolCall
-from corecoder.permissions import Permission
-from corecoder.tools.write import WriteFileTool
+from mini_co import Agent, Config, cli
+from mini_co.demo import ScriptedLLM
+from mini_co.llm import LLMResponse, ToolCall
+from mini_co.permissions import Permission
+from mini_co.tools.write import WriteFileTool
 from tests.conftest import get_tool
 
 

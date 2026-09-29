@@ -1,5 +1,5 @@
-from corecoder import session as session_module
-from corecoder.session import load_session, save_session
+from mini_co import session as session_module
+from mini_co.session import delete_session, load_session, save_session
 
 
 def test_default_session_ids_do_not_collide(tmp_path, monkeypatch):
@@ -73,3 +73,14 @@ def test_session_roundtrips_unicode(tmp_path, monkeypatch):
     raw = (tmp_path / f"{sid}.json").read_bytes()
     assert "请帮我修复这个 bug".encode() in raw
     assert load_session(sid) == (msgs, "model-zh")
+
+
+def test_delete_session_removes_only_requested_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(session_module, "SESSIONS_DIR", tmp_path)
+    first = save_session([{"role": "user", "content": "first"}], "m")
+    second = save_session([{"role": "user", "content": "second"}], "m")
+
+    assert delete_session(first)
+    assert load_session(first) is None
+    assert load_session(second) is not None
+    assert not delete_session(first)

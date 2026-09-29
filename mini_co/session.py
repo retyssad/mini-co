@@ -1,7 +1,7 @@
 """Session persistence - save and resume conversations.
 
 Claude Code maintains session state via QueryEngine (1295 lines).
-CoreCoder distills this to: JSON dump of messages + model config.
+mini-co distills this to: JSON dump of messages + model config.
 """
 
 import json
@@ -10,7 +10,7 @@ import time
 import uuid
 from pathlib import Path
 
-SESSIONS_DIR = Path.home() / ".corecoder" / "sessions"
+SESSIONS_DIR = Path.home() / ".mini-co" / "sessions"
 _SAFE_SESSION_RE = re.compile(r"[^A-Za-z0-9._-]+")
 _MAX_SESSION_ID_LEN = 100  # keep filenames comfortably under the OS limit
 
@@ -68,6 +68,16 @@ def load_session(session_id: str) -> tuple[list[dict], str] | None:
     except (json.JSONDecodeError, KeyError, OSError):
         # a corrupt or truncated session file shouldn't crash resume
         return None
+
+
+def delete_session(session_id: str) -> bool:
+    """Delete one saved session and report whether a file was removed."""
+    path = _session_path(session_id)
+    try:
+        path.unlink()
+    except FileNotFoundError:
+        return False
+    return True
 
 
 def list_sessions() -> list[dict]:
