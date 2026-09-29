@@ -60,6 +60,6 @@ python -m pytest -q
 ruff check mini_co tests
 ```
 
-核心代码位于 `mini_co/`，桌面界面位于 `mini_co/gui.py`，测试位于 `tests/`。想了解 Agent 循环、工具、上下文和扩展机制，可以阅读[中文源码导读](article/00-index.md)。
+核心代码位于 `mini_co/`，桌面界面位于 `mini_co/gui.py`，测试位于 `tests/`。
 
-许可证：[MIT](LICENSE)。
+许可证：MIT。

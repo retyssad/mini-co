@@ -18,7 +18,7 @@ from .base import Tool
 
 # Track cwd across commands (Claude Code does this too). Thread-local, so that
 # when the agent executes tools in parallel two bash calls never race on one
-# shared global: each worker thread carries its own cwd. See article 05.
+# shared global: each worker thread carries its own cwd.
 _local = threading.local()
 
 
